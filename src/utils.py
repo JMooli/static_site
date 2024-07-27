@@ -1,3 +1,5 @@
+import re
+
 from htmlnode import LeafNode
 from textnode import TextNode
 from textnode import (text_type_text, text_type_bold, text_type_italic, text_type_code, text_type_link, text_type_image)
@@ -26,6 +28,7 @@ def text_node_to_html_node(text_node):
 
 # Does not support nested delimiters
 def split_nodes_delimiter(old_nodes, delimiter, text_type):
+
     valid = [text_type_text, text_type_bold, text_type_italic, text_type_code, text_type_link, text_type_image]
     if text_type not in valid:
         raise Exception(f"unsupported text type: {text_type}")
@@ -42,3 +45,71 @@ def split_nodes_delimiter(old_nodes, delimiter, text_type):
             nodes.append(TextNode(part, text_type))
 
     return nodes
+
+def extract_markdown_images(text):
+    # ![alt text for image](url/of/image.jpg)
+    matches = re.findall(r"!\[(.*?)\]\((.*?)\)", text)
+    return matches
+
+def extract_markdown_links(text):
+    # This is a paragraph with a [link](https://www.google.com).
+    matches = re.findall(r"(?<!!)\[(.*?)\]\((.*?)\)", text)
+    return matches
+
+def recursive_split(string, images, index=0):
+
+    if index >= len(images):
+        return [string]
+
+    parts = string.split(images[index])
+    split_parts = [recursive_split(part, images, index + 1) for part in parts]
+    flattened_parts = [item for sublist in split_parts for item in sublist]
+
+    return flattened_parts
+
+
+def split_nodes_image(old_nodes):
+    new_nodes = []
+    
+    for node in old_nodes:
+        image_delimiters = []
+        images = extract_markdown_images(node.text)
+
+        if images:
+            for image in images:
+                image_delimiters.append(f"![{image[0]}]({image[1]})")
+
+            parts = recursive_split(node.text, image_delimiters)
+
+            for i in range(0, len(parts)):
+                    if parts[i] != "":
+                        new_nodes.append(TextNode(parts[i], text_type_text))
+                        if i < len(images) - 1 and images[i + 1][0] != "":
+                            new_nodes.append(TextNode(images[i + 1][0], text_type_image, images[i + 1][1]))
+        else:
+             new_nodes.append(node)
+    print(f" new nodes: {new_nodes}"  )
+    return new_nodes
+
+def split_nodes_link(old_nodes):
+    new_nodes = []
+    
+    for node in old_nodes:
+        link_delimiters = []
+        links = extract_markdown_links(node.text)
+
+        if links:
+            for link in links:
+                link_delimiters.append(f"[{link[0]}]({link[1]})")
+
+        parts = recursive_split(node.text, link_delimiters)
+
+        for i in range(0, len(parts)):
+                if parts[i] != "":
+                    new_nodes.append(TextNode(parts[i], text_type_text))
+                    if i < len(links) - 1 and links[i + 1][0] != "":
+                        new_nodes.append(TextNode(links[i + 1][0], text_type_image, links[i + 1][1]))
+        else:
+             new_nodes.append(node)
+
+    return new_nodes
