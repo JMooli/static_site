@@ -141,12 +141,14 @@ class TestSplitNodes(unittest.TestCase):
     def test_split_nodes_link_single(self):
         old_nodes = [TextNode("Here is a link to [Google](https://www.google.com).", text_type_text)]
         new_nodes = split_nodes_link(old_nodes)
-        self.assertEqual(len(new_nodes), 2)
+        self.assertEqual(len(new_nodes), 3)
         self.assertEqual(new_nodes[0].text, "Here is a link to ")
         self.assertEqual(new_nodes[0].text_type, text_type_text)
         self.assertEqual(new_nodes[1].text, "Google")
         self.assertEqual(new_nodes[1].text_type, text_type_link)
         self.assertEqual(new_nodes[1].url, "https://www.google.com")
+        self.assertEqual(new_nodes[2].text, ".")
+        self.assertEqual(new_nodes[2].text_type, text_type_text)
 
     def test_split_nodes_link_multiple(self):
         old_nodes = [TextNode("Link1: [Google](https://www.google.com) and Link2: [Bing](https://www.bing.com)", text_type_text)]
