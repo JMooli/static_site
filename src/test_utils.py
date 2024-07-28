@@ -170,7 +170,92 @@ class TestSplitNodes(unittest.TestCase):
         new_nodes = split_nodes_link(old_nodes)
         self.assertEqual(new_nodes, old_nodes)
 
+    def test_text_to_text_nodes(self):
+        text = "This is **text** with an *italic* word and a `code block` and an ![obi wan image](https://i.imgur.com/fJRm4Vk.jpeg) and a [link](https://boot.dev)"
+        nodes = text_to_textnodes(text)
+        self.assertEqual(len(nodes), 10)
+        self.assertEqual(nodes[0].text, "This is ")
+        self.assertEqual(nodes[0].text_type, text_type_text)
+        self.assertEqual(nodes[1].text, "text")
+        self.assertEqual(nodes[1].text_type, text_type_bold)
+        self.assertEqual(nodes[2].text, " with an ")
+        self.assertEqual(nodes[2].text_type, text_type_text)
+        self.assertEqual(nodes[3].text, "italic")
+        self.assertEqual(nodes[3].text_type, text_type_italic)
+        self.assertEqual(nodes[4].text, " word and a ")
+        self.assertEqual(nodes[4].text_type, text_type_text)
+        self.assertEqual(nodes[5].text, "code block")
+        self.assertEqual(nodes[5].text_type, text_type_code)
+        self.assertEqual(nodes[6].text, " and an ")
+        self.assertEqual(nodes[6].text_type, text_type_text)
+        self.assertEqual(nodes[7].text, "obi wan image")
+        self.assertEqual(nodes[7].text_type, text_type_image)
+        self.assertEqual(nodes[7].url, "https://i.imgur.com/fJRm4Vk.jpeg")
+        self.assertEqual(nodes[8].text, " and a ")
+        self.assertEqual(nodes[8].text_type, text_type_text)
+        self.assertEqual(nodes[9].text, "link")
+        self.assertEqual(nodes[9].text_type, text_type_link)
+        self.assertEqual(nodes[9].url, "https://boot.dev")
+
+class TestMarkdownToBlocks(unittest.TestCase):
     
+    def test_simple_markdown(self):
+        markdown = "This is a line.\nThis is another line."
+        expected = ["This is a line.", "This is another line."]
+        result = markdown_to_blocks(markdown)
+        self.assertEqual(result, expected)
+    
+    def test_empty_string(self):
+        markdown = ""
+        expected = []
+        result = markdown_to_blocks(markdown)
+        self.assertEqual(result, expected)
+    
+    def test_only_newlines(self):
+        markdown = "\n\n\n"
+        expected = []
+        result = markdown_to_blocks(markdown)
+        self.assertEqual(result, expected)
+    
+    def test_leading_trailing_spaces(self):
+        markdown = "   This is a line.   \n   This is another line.   "
+        expected = ["This is a line.", "This is another line."]
+        result = markdown_to_blocks(markdown)
+        self.assertEqual(result, expected)
+
+class TestBlockToBlockType(unittest.TestCase):
+    def test_heading(self):
+        self.assertEqual(block_to_block_type("# Heading 1"), "heading")
+        self.assertEqual(block_to_block_type("## Heading 2"), "heading")
+        self.assertEqual(block_to_block_type("### Heading 3"), "heading")
+
+    def test_code(self):
+        self.assertEqual(block_to_block_type("```code```"), "code")
+        self.assertEqual(block_to_block_type("```another code block```"), "code")
+
+    def test_quote(self):
+        self.assertEqual(block_to_block_type("> This is a quote"), "quote")
+        self.assertEqual(block_to_block_type("> Another quote"), "quote")
+
+    def test_unordered_list(self):
+        self.assertEqual(block_to_block_type("* Item 1"), "unordered_list")
+        self.assertEqual(block_to_block_type("- Item 2"), "unordered_list")
+
+    def test_ordered_list(self):
+        self.assertEqual(block_to_block_type("1. Item 1"), "ordered_list")
+        self.assertEqual(block_to_block_type("2. Item 2"), "ordered_list")
+
+    def test_paragraph(self):
+        self.assertEqual(block_to_block_type("This is a paragraph."), "paragraph")
+        self.assertEqual(block_to_block_type("Another paragraph."), "paragraph")
+
+    def test_mixed(self):
+        self.assertEqual(block_to_block_type("# Heading 1"), "heading")
+        self.assertEqual(block_to_block_type("```code```"), "code")
+        self.assertEqual(block_to_block_type("> This is a quote"), "quote")
+        self.assertEqual(block_to_block_type("* Item 1"), "unordered_list")
+        self.assertEqual(block_to_block_type("1. Item 1"), "ordered_list")
+        self.assertEqual(block_to_block_type("This is a paragraph."), "paragraph")
 
 if __name__ == "__main__":
     unittest.main()

@@ -5,6 +5,7 @@ from textnode import TextNode
 from textnode import (text_type_text, text_type_bold, text_type_italic, text_type_code, text_type_link, text_type_image)
 
 
+
 def text_node_to_html_node(text_node):
     if text_node.text_type == text_type_text:
         return LeafNode(None, text_node.text, None)
@@ -29,21 +30,24 @@ def text_node_to_html_node(text_node):
 # Does not support nested delimiters
 def split_nodes_delimiter(old_nodes, delimiter, text_type):
 
-    valid = [text_type_text, text_type_bold, text_type_italic, text_type_code, text_type_link, text_type_image]
+    valid = [text_type_text, text_type_bold, text_type_italic, text_type_code]
     if text_type not in valid:
         raise Exception(f"unsupported text type: {text_type}")
-   
-    parts = old_nodes.split(delimiter)
+    
     nodes = []
 
-    for i, part in enumerate(parts):
-        if i % 2 == 0:
-            # Non-delimited part
-            nodes.append(TextNode(part, text_type_text))
+    for node in old_nodes:
+        if node.text_type == text_type_text:
+            parts = node.text.split(delimiter)
+            for i, part in enumerate(parts):
+                if i % 2 == 0:
+                    # Non-delimited part
+                    nodes.append(TextNode(part, text_type_text))
+                else:
+                    # Delimited part
+                    nodes.append(TextNode(part, text_type))
         else:
-            # Delimited part
-            nodes.append(TextNode(part, text_type))
-
+            nodes.append(node)
     return nodes
 
 def extract_markdown_images(text):
@@ -107,3 +111,70 @@ def split_nodes_link(old_nodes):
             new_nodes.append(node)
     
     return new_nodes
+
+def text_to_textnodes(text):
+    # Split text into nodes
+    nodes = []
+    nodes.append(TextNode(text, text_type_text))
+    nodes = split_nodes_delimiter(nodes, "**", text_type_bold)
+    nodes = split_nodes_delimiter(nodes, "*", text_type_italic)
+    nodes = split_nodes_delimiter(nodes, "`", text_type_code)
+    nodes = split_nodes_image(nodes)
+    nodes = split_nodes_link(nodes)
+    return nodes
+
+def markdown_to_blocks(markdown):
+    blocks = []
+    for line in markdown.split("\n"):
+        if line == "":
+            continue
+        blocks.append(line.strip())
+    return blocks
+
+def block_to_block_type(block):
+    # paragraph
+    # heading
+    # code
+    # quote
+    # unordered_list
+    # ordered_list
+
+    heading_pattern = re.compile(r'^(#+) ')
+ 
+    def count_initial_hashes(s):
+        match = heading_pattern.match(s)
+        if match:
+            return len(match.group(1))
+        else:
+            return 0
+        
+   
+    if count_initial_hashes(block) > 0 and count_initial_hashes(block) < 6:
+        return "heading"
+    elif block[:3] == "```" and block[-3:] == "```":
+        return "code"
+    elif block[0] == ">":
+        is_quote = True
+        for line in block.split("\n"):
+            if line[0] != ">":
+                is_quote = False
+        if is_quote:
+            return "quote"
+
+    elif block[0] == "*" or block[0] == "-":
+        return "unordered_list"
+    
+    elif block.split(". ")[0].isdigit():
+        order = int(block.split(". ")[0])
+        is_ordeded = True
+        for line in block.split("\n"):
+            parts = line.split(". ")
+            if parts[0].isdigit():
+                if int(parts[0]) -1 == order:
+                    order = int(parts[0]) 
+            else:
+                is_ordeded = False
+        if is_ordeded:
+            return "ordered_list"
+    else: 
+        return "paragraph"

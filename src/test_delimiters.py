@@ -5,9 +5,9 @@ from utils import split_nodes_delimiter
 class TestSplitNodesDelimiter(unittest.TestCase):
 
     def test_split_text_type_bold(self):
-        text = "This is start** bold ** end."
+        node = TextNode("This is start** bold ** end.", text_type_text)
         delimiter = "**"
-        result = split_nodes_delimiter(text, delimiter, text_type_bold)
+        result = split_nodes_delimiter([node], delimiter, text_type_bold)
         self.assertEqual(len(result), 3)
         self.assertEqual(result[0].text, "This is start")
         self.assertEqual(result[0].text_type, text_type_text)
@@ -17,9 +17,9 @@ class TestSplitNodesDelimiter(unittest.TestCase):
         self.assertEqual(result[2].text_type, text_type_text)
 
     def test_split_text_type_italic(self):
-        text = "This is beginnign *text1, This is italic* and here it ends"
+        node = TextNode("This is beginnign *text1, This is italic* and here it ends", text_type_text)
         delimiter = "*"
-        result = split_nodes_delimiter(text, delimiter, text_type_italic)
+        result = split_nodes_delimiter([node], delimiter, text_type_italic)
         self.assertEqual(len(result), 3)
         self.assertEqual(result[0].text, "This is beginnign ")
         self.assertEqual(result[0].text_type, text_type_text)
@@ -29,9 +29,9 @@ class TestSplitNodesDelimiter(unittest.TestCase):
         self.assertEqual(result[2].text_type, text_type_text)
 
     def test_split_text_type_code(self):
-        text = "start `code` test"
+        node = TextNode("start `code` test", text_type_text)
         delimiter = "`"
-        result = split_nodes_delimiter(text, delimiter, text_type_code)
+        result = split_nodes_delimiter([node], delimiter, text_type_code)
         self.assertEqual(len(result), 3)
         self.assertEqual(result[0].text, "start ")
         self.assertEqual(result[0].text_type, text_type_text)
