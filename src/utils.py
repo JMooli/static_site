@@ -1,10 +1,9 @@
 import re
 
+from htmlnode import HTMLNode
 from htmlnode import LeafNode
 from textnode import TextNode
 from textnode import (text_type_text, text_type_bold, text_type_italic, text_type_code, text_type_link, text_type_image)
-
-
 
 def text_node_to_html_node(text_node):
     if text_node.text_type == text_type_text:
@@ -70,7 +69,6 @@ def recursive_split(string, images, index=0):
     flattened_parts = [item for sublist in split_parts for item in sublist]
 
     return flattened_parts
-
 
 def split_nodes_image(old_nodes):
     new_nodes = []
@@ -178,3 +176,42 @@ def block_to_block_type(block):
             return "ordered_list"
     else: 
         return "paragraph"
+
+def markdown_to_html_node(markdown):
+    blocks = markdown_to_blocks(markdown)
+
+    for block in blocks:
+        match block_to_block_type(block):
+            case "paragraph":
+                block_to_html_paragraph(block)
+            case "heading":
+                block_to_html_heading(block)
+            case "code":
+                block_to_html_code(block)
+            case "quote":
+                block_to_html_quote(block)
+            case "unordered_list":
+                block_to_html_unordered_list(block)
+            case "ordered_list":
+                block_to_html_ordered_list(block)
+
+    def block_to_html_paragraph(block):
+        return HtmlNo
+
+    def block_to_html_heading(block):
+        pass
+
+    def block_to_html_code(block):
+        pass
+
+    def block_to_html_quote(block):
+        pass
+
+    def block_to_html_unordered_list(block):
+        pass
+
+    def block_to_html_ordered_list(block):
+        pass
+
+    def text_to_children(text):
+        pass
