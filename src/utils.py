@@ -1,7 +1,6 @@
 import re
 
-from htmlnode import HTMLNode
-from htmlnode import LeafNode
+from  htmlnode import *
 from textnode import TextNode
 from textnode import (text_type_text, text_type_bold, text_type_italic, text_type_code, text_type_link, text_type_image)
 
@@ -178,6 +177,10 @@ def block_to_block_type(block):
         return "paragraph"
 
 def markdown_to_html_node(markdown):
+
+    parent_node = HTMLNode("div", None, None, None)
+
+    childs = []
     blocks = markdown_to_blocks(markdown)
 
     for block in blocks:
@@ -196,22 +199,32 @@ def markdown_to_html_node(markdown):
                 block_to_html_ordered_list(block)
 
     def block_to_html_paragraph(block):
-        return HtmlNo
+        return HTMLNode("p", block)
 
     def block_to_html_heading(block):
-        pass
+        return LeafNode("h1", block)
 
     def block_to_html_code(block):
-        pass
+        return LeafNode("code", block)
 
     def block_to_html_quote(block):
-        pass
+        return LeafNode("quote", block)
 
     def block_to_html_unordered_list(block):
-        pass
+        parent = HTMLNode("ul")
+        childs = []
+        for line in block.split("\n"):
+            childs.append(LeafNode("li", line))
+        parent.childs = childs
+        return parent
 
     def block_to_html_ordered_list(block):
-        pass
+        parent = HTMLNode("ol")
+        childs = []
+        for line in block.split("\n"):
+            childs.append(LeafNode("li", line))
+        parent.childs = childs
+        return parent
 
     def text_to_children(text):
         pass
