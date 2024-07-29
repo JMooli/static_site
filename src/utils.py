@@ -1,8 +1,16 @@
 import re
-
-from  htmlnode import *
+from htmlnode import *
 from textnode import TextNode
 from textnode import (text_type_text, text_type_bold, text_type_italic, text_type_code, text_type_link, text_type_image)
+
+heading_pattern = re.compile(r'^(#+) ')
+
+def count_initial_hashes(s):
+    match = heading_pattern.match(s)
+    if match:
+        return len(match.group(1))
+    else:
+        return 0
 
 def text_node_to_html_node(text_node):
     if text_node.text_type == text_type_text:
@@ -121,12 +129,14 @@ def text_to_textnodes(text):
     return nodes
 
 def markdown_to_blocks(markdown):
-    blocks = []
-    for line in markdown.split("\n"):
-        if line == "":
+    blocks = markdown.split("\n\n")
+    filtered_blocks = []
+    for block in blocks:
+        if block == "":
             continue
-        blocks.append(line.strip())
-    return blocks
+        block = block.strip()
+        filtered_blocks.append(block)
+    return filtered_blocks
 
 def block_to_block_type(block):
     # paragraph
@@ -136,14 +146,7 @@ def block_to_block_type(block):
     # unordered_list
     # ordered_list
 
-    heading_pattern = re.compile(r'^(#+) ')
- 
-    def count_initial_hashes(s):
-        match = heading_pattern.match(s)
-        if match:
-            return len(match.group(1))
-        else:
-            return 0
+
         
    
     if count_initial_hashes(block) > 0 and count_initial_hashes(block) < 6:
@@ -178,53 +181,56 @@ def block_to_block_type(block):
 
 def markdown_to_html_node(markdown):
 
-    parent_node = HTMLNode("div", None, None, None)
+    def block_to_html_paragraph(block):
+        return ParentNode("p", children=text_to_children(block))
 
-    childs = []
+    # need to add h1, h2, etc
+    def block_to_html_heading(block):
+        hashes = count_initial_hashes(block)
+        return LeafNode(f"h{hashes}", block.lstrip("# "))
+
+    def block_to_html_code(block):
+        return LeafNode("code", block.strip("`"))
+
+    def block_to_html_quote(block):
+        return ParentNode("blockquote", children=text_to_children(block.lstrip("> ")))
+
+    def block_to_html_unordered_list(block):
+        list_items = block.split("\n")
+        child_nodes = [LeafNode("li", item.lstrip("-* ")) for item in list_items]
+        return ParentNode("ul", children=child_nodes)
+
+    def block_to_html_ordered_list(block):
+        list_items = block.split("\n")
+        child_nodes = [LeafNode("li", item.lstrip("0123456789. ")) for item in list_items]
+        return ParentNode("ol", children=child_nodes)
+
+
+    def text_to_children(text):
+        text_nodes = text_to_textnodes(text)
+        child_nodes = []
+        for node in text_nodes:
+            child_nodes.append(text_node_to_html_node(node))
+        return child_nodes
+
+    
+    div_childs = []
     blocks = markdown_to_blocks(markdown)
 
     for block in blocks:
         match block_to_block_type(block):
             case "paragraph":
-                block_to_html_paragraph(block)
+                div_childs.append(block_to_html_paragraph(block))
             case "heading":
-                block_to_html_heading(block)
+                div_childs.append(block_to_html_heading(block))
             case "code":
-                block_to_html_code(block)
+                div_childs.append(block_to_html_code(block))
             case "quote":
-                block_to_html_quote(block)
+                div_childs.append(block_to_html_quote(block))
             case "unordered_list":
-                block_to_html_unordered_list(block)
+                div_childs.append(block_to_html_unordered_list(block))
             case "ordered_list":
-                block_to_html_ordered_list(block)
+                div_childs.append(block_to_html_ordered_list(block))
+    
+    return ParentNode("div", children=div_childs)
 
-    def block_to_html_paragraph(block):
-        return HTMLNode("p", block)
-
-    def block_to_html_heading(block):
-        return LeafNode("h1", block)
-
-    def block_to_html_code(block):
-        return LeafNode("code", block)
-
-    def block_to_html_quote(block):
-        return LeafNode("quote", block)
-
-    def block_to_html_unordered_list(block):
-        parent = HTMLNode("ul")
-        childs = []
-        for line in block.split("\n"):
-            childs.append(LeafNode("li", line))
-        parent.childs = childs
-        return parent
-
-    def block_to_html_ordered_list(block):
-        parent = HTMLNode("ol")
-        childs = []
-        for line in block.split("\n"):
-            childs.append(LeafNode("li", line))
-        parent.childs = childs
-        return parent
-
-    def text_to_children(text):
-        pass

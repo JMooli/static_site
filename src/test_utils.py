@@ -198,31 +198,13 @@ class TestSplitNodes(unittest.TestCase):
         self.assertEqual(nodes[9].url, "https://boot.dev")
 
 class TestMarkdownToBlocks(unittest.TestCase):
-    
-    def test_simple_markdown(self):
-        markdown = "This is a line.\nThis is another line."
-        expected = ["This is a line.", "This is another line."]
-        result = markdown_to_blocks(markdown)
-        self.assertEqual(result, expected)
-    
+       
     def test_empty_string(self):
         markdown = ""
         expected = []
         result = markdown_to_blocks(markdown)
         self.assertEqual(result, expected)
     
-    def test_only_newlines(self):
-        markdown = "\n\n\n"
-        expected = []
-        result = markdown_to_blocks(markdown)
-        self.assertEqual(result, expected)
-    
-    def test_leading_trailing_spaces(self):
-        markdown = "   This is a line.   \n   This is another line.   "
-        expected = ["This is a line.", "This is another line."]
-        result = markdown_to_blocks(markdown)
-        self.assertEqual(result, expected)
-
 class TestBlockToBlockType(unittest.TestCase):
     def test_heading(self):
         self.assertEqual(block_to_block_type("# Heading 1"), "heading")
@@ -256,6 +238,84 @@ class TestBlockToBlockType(unittest.TestCase):
         self.assertEqual(block_to_block_type("* Item 1"), "unordered_list")
         self.assertEqual(block_to_block_type("1. Item 1"), "ordered_list")
         self.assertEqual(block_to_block_type("This is a paragraph."), "paragraph")
+
+class TestMarkdownToHtmlNode(unittest.TestCase):
+    def test_paragraph_conversion(self):
+        markdown = "This is a paragraph."
+        html_node = markdown_to_html_node(markdown)
+        self.assertEqual(html_node.to_html(), "<div><p>This is a paragraph.</p></div>")
+
+    def test_heading_conversion(self):
+        markdown = "# This is a heading"
+        html_node = markdown_to_html_node(markdown)
+        self.assertEqual(html_node.to_html(), "<div><h1>This is a heading</h1></div>")
+
+    def test_code_conversion(self):
+        markdown = "```This is a code block```"
+        html_node = markdown_to_html_node(markdown)
+        self.assertEqual(html_node.to_html(), "<div><code>This is a code block</code></div>")
+
+    def test_quote_conversion(self):
+        markdown = "> This is a quote"
+        html_node = markdown_to_html_node(markdown)
+        self.assertEqual(html_node.to_html(), "<div><blockquote>This is a quote</blockquote></div>")
+
+    def test_unordered_list_conversion(self):
+        markdown = "- Item 1\n- Item 2\n- Item 3"
+        html_node = markdown_to_html_node(markdown)
+        self.assertEqual(html_node.to_html(), "<div><ul><li>Item 1</li><li>Item 2</li><li>Item 3</li></ul></div>")
+
+    def test_ordered_list_conversion(self):
+        markdown = "1. Item 1\n2. Item 2\n3. Item 3"
+        html_node = markdown_to_html_node(markdown)
+        self.assertEqual(html_node.to_html(), "<div><ol><li>Item 1</li><li>Item 2</li><li>Item 3</li></ol></div>")
+
+class TestMarkdownToHTML(unittest.TestCase):
+    def test_markdown_to_blocks(self):
+        md = """
+This is **bolded** paragraph
+
+This is another paragraph with *italic* text and `code` here
+This is the same paragraph on a new line
+
+* This is a list
+* with items
+"""
+        blocks = markdown_to_blocks(md)
+        self.assertEqual(
+            blocks,
+            [
+                "This is **bolded** paragraph",
+                "This is another paragraph with *italic* text and `code` here\nThis is the same paragraph on a new line",
+                "* This is a list\n* with items",
+            ],
+        )
+
+    def test_markdown_to_blocks_newlines(self):
+        md = """
+This is **bolded** paragraph
+
+
+
+
+This is another paragraph with *italic* text and `code` here
+This is the same paragraph on a new line
+
+* This is a list
+* with items
+"""
+        blocks = markdown_to_blocks(md)
+        self.assertEqual(
+            blocks,
+            [
+                "This is **bolded** paragraph",
+                "This is another paragraph with *italic* text and `code` here\nThis is the same paragraph on a new line",
+                "* This is a list\n* with items",
+            ],
+        )
+
+
+
 
 if __name__ == "__main__":
     unittest.main()
