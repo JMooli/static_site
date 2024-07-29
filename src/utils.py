@@ -1,3 +1,4 @@
+import os
 import re
 from htmlnode import *
 from textnode import TextNode
@@ -146,9 +147,6 @@ def block_to_block_type(block):
     # unordered_list
     # ordered_list
 
-
-        
-   
     if count_initial_hashes(block) > 0 and count_initial_hashes(block) < 6:
         return "heading"
     elif block[:3] == "```" and block[-3:] == "```":
@@ -161,7 +159,7 @@ def block_to_block_type(block):
         if is_quote:
             return "quote"
 
-    elif block[0] == "*" or block[0] == "-":
+    elif block.startswith("* ") or block.startswith("- "):
         return "unordered_list"
     
     elif block.split(". ")[0].isdigit():
@@ -197,12 +195,12 @@ def markdown_to_html_node(markdown):
 
     def block_to_html_unordered_list(block):
         list_items = block.split("\n")
-        child_nodes = [LeafNode("li", item.lstrip("-* ")) for item in list_items]
+        child_nodes = [ParentNode("li", children=text_to_children(item.lstrip("-* "))) for item in list_items]
         return ParentNode("ul", children=child_nodes)
 
     def block_to_html_ordered_list(block):
         list_items = block.split("\n")
-        child_nodes = [LeafNode("li", item.lstrip("0123456789. ")) for item in list_items]
+        child_nodes = [ParentNode("li", children=text_to_children(item.lstrip("0123456789. "))) for item in list_items]
         return ParentNode("ol", children=child_nodes)
 
 
@@ -234,3 +232,27 @@ def markdown_to_html_node(markdown):
     
     return ParentNode("div", children=div_childs)
 
+def extract_title(markdown):
+    for line in markdown.split("\n"):
+        if line.startswith("# "):
+            return line.lstrip("# ")
+    raise Exception("No header found !")
+
+def generate_page(from_path, template_path, dest_path):
+    print(f"Generating page from {from_path} to {dest_path} using {template_path}")
+
+    with open(from_path, 'r') as f_md:
+        markdown = f_md.read()
+    
+    with open(template_path, 'r') as f_t:
+        template = f_t.read()
+
+    html_content = markdown_to_html_node(markdown).to_html()
+    title = extract_title(markdown)
+
+    html_content = template.replace("{{ title }}", title).replace("{{ Content }}", html_content)
+
+    os.makedirs(os.path.dirname(dest_path), exist_ok=True)
+    with open(dest_path, 'w') as f_out:
+        f_out.write(html_content)
+        
