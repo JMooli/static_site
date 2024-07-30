@@ -32,7 +32,7 @@ def setup():
     os.mkdir("public")
     
     recursive_copy("static", "public")
-    generate_page("content/index.md", "template.html", "public/index.html")
+    generate_pages_recursive("content", "template.html", "public")
 
 
 main()

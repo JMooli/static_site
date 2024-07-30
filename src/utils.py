@@ -1,4 +1,5 @@
 import os
+import pathlib
 import re
 from htmlnode import *
 from textnode import TextNode
@@ -250,9 +251,22 @@ def generate_page(from_path, template_path, dest_path):
     html_content = markdown_to_html_node(markdown).to_html()
     title = extract_title(markdown)
 
-    html_content = template.replace("{{ title }}", title).replace("{{ Content }}", html_content)
+    html_content = template.replace("{{ Title }}", title).replace("{{ Content }}", html_content)
 
     os.makedirs(os.path.dirname(dest_path), exist_ok=True)
     with open(dest_path, 'w') as f_out:
         f_out.write(html_content)
+
+def generate_pages_recursive(content_dir, template_path, dest_dir_path):
+    dir_path_content = os.listdir(content_dir)
+    for file in dir_path_content:
+        file_path = pathlib.Path(content_dir, file)
+        dest_path = pathlib.Path(dest_dir_path, file)
+        if os.path.isfile(file_path):
+            if file.split(".")[-1] == "md":
+                dest_path = pathlib.Path(dest_dir_path, file.replace(".md", ".html"))
+                generate_page(file_path, template_path, dest_path)
+        else:
+            generate_pages_recursive(file_path, template_path, dest_path)
+
         
